@@ -3,6 +3,7 @@ const cors = require("cors");
 const app = express();
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5002;
 
 // middleware
@@ -80,7 +81,6 @@ async function run() {
     });
     // admin
     app.get("/users/admin/:email", verifyToken, async (req, res) => {
-      console.log("hello");
       const email = req.params.email;
       const query = { email: email };
       const user = await userCollection.findOne(query);
@@ -126,6 +126,7 @@ async function run() {
       const result = await userCollection.updateOne(filter, updatedDoc);
       res.send(result);
     });
+
     // handle make Surveyor
     app.patch("/users/surveyor/:id", async (req, res) => {
       const id = req.params.id;
@@ -158,6 +159,21 @@ async function run() {
       console.log(survey);
       const result = await surveyCollection.insertOne(survey);
       res.send(result);
+    });
+    // payment intent
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      console.log(amount, "a");
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
     });
 
     // Send a ping to confirm a successful connection
