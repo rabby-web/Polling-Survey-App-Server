@@ -28,6 +28,7 @@ async function run() {
     // await client.connect();
     const userCollection = client.db("surveyDB").collection("users");
     const surveyCollection = client.db("surveyDB").collection("survey");
+    const paymentCollection = client.db("surveyDB").collection("payment");
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -148,17 +149,55 @@ async function run() {
       res.send(result);
     });
     // survey--------------------
-    // get :: show survey data
-    app.get("/api/v1/show-servey", async (req, res) => {
+    // get show survey data
+    app.get("/api/v1/show-survey", async (req, res) => {
       const result = await surveyCollection.find().toArray();
       res.send(result);
     });
-    // post :: create survey
+    // update survey
+    app.get("/api/v1/update-survey/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await surveyCollection.findOne(query);
+      res.send(result);
+    });
+
+    // update :: update survey data
+    app.patch(
+      "/api/v1/:surveyId/update-survey",
+
+      async (req, res) => {
+        const surveyData = req.body;
+        const surveyId = req.params.surveyId;
+        const query = { _id: new ObjectId(surveyId) };
+        const updatedSurvey = {
+          $set: {
+            surveyorEmail: surveyData.surveyorEmail,
+            surveyTitle: surveyData.surveyTitle,
+            category: surveyData.category,
+            date: surveyData.date,
+            description: surveyData.description,
+            question1: surveyData.question1,
+          },
+        };
+        const result = await surveyCollection.updateOne(query, updatedSurvey);
+        res.send(result);
+      }
+    );
+    // post create survey
 
     app.post("/api/v1/create-survey", async (req, res) => {
       const survey = req.body;
       console.log(survey);
       const result = await surveyCollection.insertOne(survey);
+      res.send(result);
+    });
+
+    // delete  create survey
+    app.delete("/api/v1/delete-survey/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await surveyCollection.deleteOne(query);
       res.send(result);
     });
     // payment intent
@@ -175,6 +214,23 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
+    });
+    //  post :: payments and user data
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      // console.log(payment);
+      const result = await paymentCollection.insertOne(payment);
+      // console.log(payment.email);
+      const userEmail = payment.email;
+      // console.log(userEmail,'ja payment korse tar email');
+
+      // update user role
+      const updateUserRole = await userCollection.updateOne(
+        { email: userEmail },
+        { $set: { role: "prouser" } }
+      );
+
+      res.send({ result, updateUserRole });
     });
 
     // Send a ping to confirm a successful connection
