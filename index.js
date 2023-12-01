@@ -77,7 +77,7 @@ async function run() {
 
     // user related api
     app.get("/users", verifyToken, async (req, res) => {
-      const result = await userCollection.find().toArray();
+      const result = await userCollection.find().sort({ status: 1 }).toArray();
       res.send(result);
     });
     // admin
@@ -101,6 +101,16 @@ async function run() {
         surveyor = user?.role === "surveyor";
       }
       res.send({ surveyor });
+    });
+    app.get("/users/pro-user/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      let prouser = false;
+      if (user) {
+        prouser = user?.role === "prouser";
+      }
+      res.send({ prouser });
     });
 
     app.post("/users", async (req, res) => {
@@ -214,6 +224,13 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
+    });
+    // app.post("/payments", async (req, res) => {
+    //   const payment = req.body;
+    // });
+    app.get("/payments", async (req, res) => {
+      const result = await paymentCollection.find().toArray();
+      res.send(result);
     });
     //  post :: payments and user data
     app.post("/payments", async (req, res) => {
