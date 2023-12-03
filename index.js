@@ -29,6 +29,8 @@ async function run() {
     const userCollection = client.db("surveyDB").collection("users");
     const surveyCollection = client.db("surveyDB").collection("survey");
     const paymentCollection = client.db("surveyDB").collection("payment");
+    const commentCollection = client.db("surveyDB").collection("comment");
+    const reportCollection = client.db("surveyDB").collection("report");
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -76,7 +78,7 @@ async function run() {
     };
 
     // user related api
-    app.get("/users", verifyToken, async (req, res) => {
+    app.get("/users", async (req, res) => {
       const result = await userCollection.find().sort({ status: 1 }).toArray();
       res.send(result);
     });
@@ -159,6 +161,57 @@ async function run() {
       res.send(result);
     });
     // survey--------------------
+
+    // report
+    app.get("/api/v1/report", async (req, res) => {
+      const result = await reportCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/api/v1/report", async (req, res) => {
+      const report = req.body;
+      console.log(report);
+      const result = await reportCollection.insertOne(report);
+      res.send(result);
+    });
+
+    // get :: show comment
+    app.get("/api/v1/show-comment", async (req, res) => {
+      let query = {};
+      if (req.query.commentId) {
+        query = { commentId: req.query.commentId };
+      }
+      const result = await commentCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // post :: create comment
+    app.post("/api/v1/comment", async (req, res) => {
+      const comment = req.body;
+      // console.log(comment);
+      const result = await commentCollection.insertOne(comment);
+      res.send(result);
+    });
+    // get :: recent survey (for featured survey)
+    app.get("/api/v1/recent-surveys", async (req, res) => {
+      try {
+        const recentSurveys = await surveyCollection
+          .find()
+          .sort({ _id: -1 })
+          .limit(6)
+          .toArray();
+        res.send(recentSurveys);
+      } catch (error) {
+        console.error("Error fetching recent surveys:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
+    // post :: create survey
+    app.post("/api/v1/create-surveyVote", async (req, res) => {
+      const survey = req.body;
+      console.log(survey.email, "survey email");
+      const result = await surveyCollection.insertOne(survey);
+      res.send(result);
+    });
     // get show survey data
     app.get("/api/v1/show-survey", async (req, res) => {
       const result = await surveyCollection.find().toArray();
