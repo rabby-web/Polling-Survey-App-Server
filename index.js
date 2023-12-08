@@ -24,8 +24,6 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
     const userCollection = client.db("surveyDB").collection("users");
     const surveyCollection = client.db("surveyDB").collection("survey");
     const paymentCollection = client.db("surveyDB").collection("payment");
@@ -160,7 +158,6 @@ async function run() {
       const result = await userCollection.deleteOne(query);
       res.send(result);
     });
-    // survey--------------------
 
     // report
     app.get("/api/v1/report", async (req, res) => {
